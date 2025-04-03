@@ -1,30 +1,33 @@
-#coding=utf8
-#Wei Guannan <kiss.kraks@gmail.com>
+# coding=utf8
+# Wei Guannan <kiss.kraks@gmail.com>
 
 import copy
 import random
 from colorama import Fore, Back
+from functools import reduce
 
 def reduceLineLeft(xs): 
     def aux(acc, y):
-        if len(acc) == 0: acc.append(y)
-        elif acc[len(acc)-1] == y:
-            acc[len(acc)-1] = y * 2
+        if len(acc) == 0:
+            acc.append(y)
+        elif acc[-1] == y:
+            acc[-1] = y * 2
             acc.append(0)
-        else: acc.append(y)
+        else:
+            acc.append(y)
         return acc
-    res = filter(lambda x: x!=0, reduce(aux, filter(lambda x: x!=0, xs), []))
-    res.extend([0 for i in range(0, len(xs)-len(res))])
+    res = list(filter(lambda x: x != 0, reduce(aux, filter(lambda x: x != 0, xs), [])))
+    res.extend([0] * (len(xs) - len(res)))
     return res
 
 def reduceLineRight(xs):
     return reduceLineLeft(xs[::-1])[::-1]
 
 def reduceLeft(a):
-    return map(reduceLineLeft, a)
+    return [reduceLineLeft(row) for row in a]
 
 def reduceRight(a):
-    return map(reduceLineRight, a)
+    return [reduceLineRight(row) for row in a]
 
 def reduceUp(a):
     return rotate(reduceLeft(rotate(a)))
@@ -33,74 +36,61 @@ def reduceDown(a):
     return rotate(reduceRight(rotate(a)))
 
 def rotate(a):
-    def auxset(i, j): b[j][i] = a[i][j]
-    b = newEmpty(len(a))
-    map(lambda i: map(lambda j: auxset(i, j), range(0, len(a[i]))), range(0, len(a)))
-    return b
+    size = len(a)
+    return [[a[j][i] for j in range(size)] for i in range(size)]
 
 def prettyPrint(a):
     def color(x):
-        if x == 0:    return Fore.RESET + Back.RESET
-        if x == 2:    return Fore.RED + Back.RESET
-        if x == 4:    return Fore.GREEN + Back.RESET
-        if x == 8:    return Fore.YELLOW + Back.RESET
-        if x == 16:   return Fore.BLUE + Back.RESET
-        if x == 32:   return Fore.MAGENTA + Back.RESET
-        if x == 64:   return Fore.CYAN + Back.RESET
-        if x == 128:  return Fore.RED + Back.BLACK
-        if x == 256:  return Fore.GREEN + Back.BLACK
-        if x == 512:  return Fore.YELLOW + Back.BLACK
-        if x == 1024: return Fore.BLUE + Back.BLACK
-        if x == 2048: return Fore.MAGENTA + Back.BLACK
-        if x == 4096: return Fore.CYAN + Back.BLACK
-        if x == 8192: return Fore.WHITE + Back.BLACK
-    for i in a:
-        for j in i:
-            print color(j) + ("%4d" % j) + Fore.RESET + Back.RESET,
-        print
+        colors = {
+            0: Fore.RESET + Back.RESET,
+            2: Fore.RED + Back.RESET,
+            4: Fore.GREEN + Back.RESET,
+            8: Fore.YELLOW + Back.RESET,
+            16: Fore.BLUE + Back.RESET,
+            32: Fore.MAGENTA + Back.RESET,
+            64: Fore.CYAN + Back.RESET,
+            128: Fore.RED + Back.BLACK,
+            256: Fore.GREEN + Back.BLACK,
+            512: Fore.YELLOW + Back.BLACK,
+            1024: Fore.BLUE + Back.BLACK,
+            2048: Fore.MAGENTA + Back.BLACK,
+            4096: Fore.CYAN + Back.BLACK,
+            8192: Fore.WHITE + Back.BLACK
+        }
+        return colors.get(x, Fore.RESET + Back.RESET)
+    for row in a:
+        print(" ".join(color(num) + f"{num:4d}" + Fore.RESET + Back.RESET for num in row))
+    print()
 
 def newEmpty(size):
-    return [[0 for i in range(0, size)] for i in range(0, size)]
+    return [[0] * size for _ in range(size)]
 
 def isWin(a):
-    return traverse(a, lambda x: x == 2048)
+    return any(2048 in row for row in a)
 
 def isFail(a):
-    def aux(a):
-        for i in a:
-            for j in zip(i, i[1:]):
-                if j[0] == 0 or j[1] == 0 or j[0] == j[1]: return False
-        return True
-    return aux(a) and aux(rotate(a))
-    
-def traverse(a, f):
-    for line in a:
-        for ele in line:
-            if f(ele): return True
-    return False
+    for row in a:
+        for x, y in zip(row, row[1:]):
+            if x == 0 or y == 0 or x == y:
+                return False
+    return all(isFail(list(col)) for col in zip(*a))
 
 def randomPoint(size):
-    x = random.randint(0, size)
-    y = random.randint(0, size)
-    return (x, y)
+    return random.randint(0, size - 1), random.randint(0, size - 1)
 
 def randomInit(a):
     seed = [2, 2, 2, 4]
-    x, y = randomPoint(len(a)-1)
-    v = random.randint(0, len(seed)-1)
-    a[x][y] = seed[v]
+    x, y = randomPoint(len(a))
+    while a[x][y] != 0:
+        x, y = randomPoint(len(a))
+    a[x][y] = random.choice(seed)
 
 def randomNum(a):
-    seed = [2, 2, 2, 4]
-    x, y = randomPoint(len(a)-1)
-    if a[x][y] == 0:
-        v = random.randint(0, len(seed)-1)
-        a[x][y] = seed[v]
-    else: randomNum(a)
+    randomInit(a)
 
 def newGame(size):
-    print "press w to move up, a to move left, s to move down, d to move right."
-    print "press q to quit."
+    print("Press w to move up, a to move left, s to move down, d to move right.")
+    print("Press q to quit.")
     won = False
     a = newEmpty(size)
     randomInit(a)
@@ -108,21 +98,22 @@ def newGame(size):
     prettyPrint(a)
     while True:
         b = copy.deepcopy(a)
-        key = raw_input()
+        key = input("Move: ")
         if key == "w":   a = reduceUp(a)
         elif key == "a": a = reduceLeft(a)
         elif key == "s": a = reduceDown(a)
         elif key == "d": a = reduceRight(a)
         elif key == "q": break
         if a == b: 
-            print "no numbers to be reduce"
-        else: randomNum(a)
+            print("No numbers were reduced.")
+        else:
+            randomNum(a)
         prettyPrint(a)
         if isWin(a) and not won:
-            print "You win"
+            print("You win!")
             won = True
         elif isFail(a):
-            print "You fail"
+            print("You lose!")
             break
 
 def test():
@@ -139,6 +130,7 @@ def test():
     assert reduceLineRight([2, 0, 0, 2]) == [0, 0, 0, 4]
     assert reduceLineRight([4, 4, 2, 2]) == [0, 0, 8, 4]
     assert reduceLineRight([2, 4, 4, 2]) == [0, 2, 8, 2]
-    
+    print("All tests passed!")
+
 if __name__ == "__main__":
     newGame(4)
