@@ -166,6 +166,7 @@ def newGame():
         if key == "P":
             sequence = input("What sequence of movements would you like to iterate on? ").upper()
             index = 0
+            sim_moves = 0  # contador local
             while True:
                 move = sequence[index % len(sequence)]
                 temp = copy.deepcopy(a)
@@ -178,6 +179,7 @@ def newGame():
                 else:
                     a = reduced
                     randomNum(a)
+                    sim_moves += 1
                     moves += 1
                     max_tile = max(max(row) for row in a)
                     if max_tile >= 16:
@@ -199,11 +201,11 @@ def newGame():
                         print(Fore.RED + "Game over!" + Fore.RESET)
                         break
                 index += 1
-                print(Fore.CYAN + f"\nSimulation complete." + Fore.RESET)
-                print(Fore.GREEN + f"Total simulated moves: " + Fore.WHITE + f"{moves}" + Fore.RESET)
-                print(Fore.GREEN + f"Total simulated states: " + Fore.WHITE + f"{state_count}" + Fore.RESET)
 
+            print(Fore.CYAN + f"\nSimulation complete." + Fore.RESET)
+            print(Fore.GREEN + f"Total simulated moves: " + Fore.WHITE + f"{sim_moves}" + Fore.RESET)
             continue
+
 
         if key == "R":
             directions = ["W", "A", "S", "D"]
